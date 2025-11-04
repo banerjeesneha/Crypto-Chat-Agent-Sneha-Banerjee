@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import praw
 from transformers import pipeline
+from datetime import datetime
 
 # ---------------------- Reddit Setup ----------------------
 reddit = praw.Reddit(
@@ -52,7 +53,6 @@ def generate_summary():
     for c in coins:
         coin_name = c.get("name", "Unknown")
         price_change = c.get("price_change_percentage_24h", 0)
-
         trend = "↑" if price_change > 0 else "↓"
         sentiment_label = get_reddit_sentiment(coin_name)
         summary_lines.append(
@@ -61,13 +61,17 @@ def generate_summary():
     return "\n".join(summary_lines)
 
 def get_top_coins():
-    coins = get_crypto_data(per_page=50)  # fetch top 50 by market cap
+    coins = get_crypto_data(per_page=50)
     if not coins:
-        return [], []
+        return [], "", []
 
     # Sort coins by 24h price change
-    bullish = sorted(coins, key=lambda x: x.get("price_change_percentage_24h", 0), reverse=True)[:5]
-    bearish = sorted(coins, key=lambda x: x.get("price_change_percentage_24h", 0))[:5]
+    sorted_coins = sorted(coins, key=lambda x: x.get("price_change_percentage_24h", 0), reverse=True)
+    bullish = sorted_coins[:5]
+
+    # Exclude bullish coins from bearish selection
+    remaining = [c for c in sorted_coins if c not in bullish]
+    bearish = sorted(remaining, key=lambda x: x.get("price_change_percentage_24h", 0))[:5]
 
     bullish_list = [
         f"{c.get('name','Unknown')} ↑{c.get('price_change_percentage_24h',0):.2f}% — sentiment: {get_reddit_sentiment(c.get('name',''))}" 
@@ -78,21 +82,27 @@ def get_top_coins():
         for c in bearish
     ]
 
-    return bullish_list, bearish_list
+    # Timestamp
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    return bullish_list, timestamp, bearish_list
 
 # ---------------------- Streamlit UI ----------------------
 st.title("💬 Crypto Chat Agent")
 
+# Daily summary
 st.subheader("📊 Daily Coin Summary")
 if st.button("Get Today's Crypto Summary"):
     with st.spinner("Fetching live market & sentiment data..."):
         output = generate_summary()
     st.text_area("AI Agent Summary", value=output, height=200)
 
+# Top 5 bullish/bearish coins
 st.subheader("📈 Top 5 Bullish & Bearish Coins")
 if st.button("Get Top Coins"):
     with st.spinner("Fetching top coins..."):
-        bullish_list, bearish_list = get_top_coins()
+        bullish_list, timestamp, bearish_list = get_top_coins()
+    st.caption(f"Data fetched at: {timestamp}")
     st.subheader("Top 5 Bullish Coins")
     st.text_area("", value="\n".join(bullish_list), height=150)
     st.subheader("Top 5 Bearish Coins")
