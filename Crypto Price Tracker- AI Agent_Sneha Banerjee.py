@@ -116,4 +116,5 @@ if st.button("Get Top Movers"):
     st.subheader("Top 5 Bearish Coins")
     st.text_area("", value="\n".join(bearish_list), height=150)
 
-st.info("Cl
+st.info("Click the buttons anytime — agent fetches fresh data automatically.")
+
