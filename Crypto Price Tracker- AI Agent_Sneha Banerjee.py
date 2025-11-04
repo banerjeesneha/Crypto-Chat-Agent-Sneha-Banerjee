@@ -14,9 +14,15 @@ reddit = praw.Reddit(
 sentiment = pipeline("sentiment-analysis")
 
 # ---------------------- Functions ----------------------
-def get_crypto_data():
+def get_crypto_data(ids="bitcoin,ethereum,solana,zcash", per_page=50):
     url = "https://api.coingecko.com/api/v3/coins/markets"
-    params = {"vs_currency": "usd", "ids": "bitcoin,ethereum,solana,zcash"}
+    params = {
+        "vs_currency": "usd",
+        "ids": ids,
+        "order": "market_cap_desc",
+        "per_page": per_page,
+        "page": 1
+    }
     try:
         response = requests.get(url, params=params, timeout=10)
         data = response.json()
@@ -54,12 +60,42 @@ def generate_summary():
         )
     return "\n".join(summary_lines)
 
+def get_top_coins():
+    coins = get_crypto_data(per_page=50)  # fetch top 50 by market cap
+    if not coins:
+        return [], []
+
+    # Sort coins by 24h price change
+    bullish = sorted(coins, key=lambda x: x.get("price_change_percentage_24h", 0), reverse=True)[:5]
+    bearish = sorted(coins, key=lambda x: x.get("price_change_percentage_24h", 0))[:5]
+
+    bullish_list = [
+        f"{c.get('name','Unknown')} ↑{c.get('price_change_percentage_24h',0):.2f}% — sentiment: {get_reddit_sentiment(c.get('name',''))}" 
+        for c in bullish
+    ]
+    bearish_list = [
+        f"{c.get('name','Unknown')} ↓{c.get('price_change_percentage_24h',0):.2f}% — sentiment: {get_reddit_sentiment(c.get('name',''))}" 
+        for c in bearish
+    ]
+
+    return bullish_list, bearish_list
+
 # ---------------------- Streamlit UI ----------------------
 st.title("💬 Crypto Chat Agent")
 
+st.subheader("📊 Daily Coin Summary")
 if st.button("Get Today's Crypto Summary"):
     with st.spinner("Fetching live market & sentiment data..."):
         output = generate_summary()
     st.text_area("AI Agent Summary", value=output, height=200)
 
-st.info("Click the button anytime — agent fetches fresh data automatically.")
+st.subheader("📈 Top 5 Bullish & Bearish Coins")
+if st.button("Get Top Coins"):
+    with st.spinner("Fetching top coins..."):
+        bullish_list, bearish_list = get_top_coins()
+    st.subheader("Top 5 Bullish Coins")
+    st.text_area("", value="\n".join(bullish_list), height=150)
+    st.subheader("Top 5 Bearish Coins")
+    st.text_area("", value="\n".join(bearish_list), height=150)
+
+st.info("Click the buttons anytime — agent fetches fresh data automatically.")
