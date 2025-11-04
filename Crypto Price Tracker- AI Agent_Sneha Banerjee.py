@@ -66,20 +66,25 @@ def generate_summary():
 # ---------------------- Top Movers ----------------------
 def get_top_movers(per_page=250, top_n=5):
     coins = get_crypto_data(ids="", per_page=per_page)
+    if not coins or not isinstance(coins, list):
+        return [], "", []
+
+    # Filter out coins without 24h change
+    coins = [c for c in coins if c.get("price_change_percentage_24h") is not None]
     if not coins:
         return [], "", []
 
-    # Top 5 bullish coins (highest 24h % change)
-    bullish = sorted(coins, key=lambda x: x.get("price_change_percentage_24h",0), reverse=True)[:top_n]
-    # Top 5 bearish coins (lowest 24h % change)
-    bearish = sorted(coins, key=lambda x: x.get("price_change_percentage_24h",0))[:top_n]
+    # Top 5 bullish and bearish
+    bullish = sorted(coins, key=lambda x: x["price_change_percentage_24h"], reverse=True)[:top_n]
+    bearish = sorted(coins, key=lambda x: x["price_change_percentage_24h"])[:top_n]
 
+    # Sentiment only for top 5 coins
     bullish_list = [
-        f"{c.get('name','Unknown')} ↑{c.get('price_change_percentage_24h',0):.2f}% — sentiment: {get_reddit_sentiment(c.get('name',''))}"
+        f"{c.get('name','Unknown')} ↑{c['price_change_percentage_24h']:.2f}% — sentiment: {get_reddit_sentiment(c.get('name',''))}"
         for c in bullish
     ]
     bearish_list = [
-        f"{c.get('name','Unknown')} ↓{c.get('price_change_percentage_24h',0):.2f}% — sentiment: {get_reddit_sentiment(c.get('name',''))}"
+        f"{c.get('name','Unknown')} ↓{c['price_change_percentage_24h']:.2f}% — sentiment: {get_reddit_sentiment(c.get('name',''))}"
         for c in bearish
     ]
 
