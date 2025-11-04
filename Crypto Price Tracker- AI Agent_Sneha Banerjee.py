@@ -54,9 +54,10 @@ def get_reddit_sentiment(coin):
     except Exception:
         return "neutral"
 
-# ---------------------- Summary for 4 coins ----------------------
+# ---------------------- Summary for 5 coins ----------------------
 def get_summary_coins():
-    return get_crypto_data(ids="bitcoin,ethereum,solana,zcash", per_page=4)
+    # Added Cardano (ADA) as 5th coin
+    return get_crypto_data(ids="bitcoin,ethereum,solana,zcash,cardano", per_page=5)
 
 def generate_summary():
     coins = get_summary_coins()
@@ -94,9 +95,9 @@ def get_top_movers(per_page=250, top_n=5):
 st.title("💬 Crypto Chat Agent")
 
 # Summary Section
-st.subheader("📊 Daily Coin Summary (Bitcoin, Ethereum, Solana, Zcash)")
+st.subheader("📊 Daily Coin Summary (Bitcoin, Ethereum, Solana, Zcash, Cardano)")
 if st.button("Get Summary"):
-    with st.spinner("Fetching 4 coin summary..."):
+    with st.spinner("Fetching 5 coin summary..."):
         summary_lines = generate_summary()
     st.text_area("Daily Summary", value="\n".join(summary_lines), height=200)
 
