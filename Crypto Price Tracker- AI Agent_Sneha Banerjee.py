@@ -56,10 +56,14 @@ def get_summary_coins():
     ids = "bitcoin,ethereum,solana,zcash"
     return get_crypto_data(ids=ids, per_page=4)
 
-def generate_summary():
-    coins = get_summary_coins()
-    if not coins:
-        return ["Error fetching crypto data. Please try again later."]
+def get_summary_coins(retries=3):
+    ids = "bitcoin,ethereum,solana,zcash"
+    for _ in range(retries):
+        coins = get_crypto_data(ids=ids, per_page=4)
+        if coins:
+            return coins
+    st.error("Unable to fetch data from Coingecko after multiple attempts. Please check your network or try again later.")
+    return []
     
     summary_lines = []
     for c in coins:
