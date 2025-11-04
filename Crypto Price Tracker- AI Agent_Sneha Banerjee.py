@@ -114,18 +114,21 @@ if st.button("Get Top Movers"):
 
 st.info("Click the buttons anytime — agent fetches fresh data automatically.")
 
-# --- Footer Section ---
-st.markdown("---")
-st.subheader("🧠 Built by")
-st.markdown("""
-👩‍💻 **Sneha Banerjee** — Data & Product Analytics professional exploring **AI Agents for real-world use cases**.  
-🔗 [Connect on LinkedIn](https://www.linkedin.com/in/snehabanerjee27)
-""")
 
-st.subheader("📊 Data Sources")
-st.markdown("""
-💠 **[CoinGecko API](https://www.coingecko.com/en/api)** — Real-time cryptocurrency market data  
-💠 **[Reddit API (r/CryptoCurrency)](https://www.reddit.com/r/CryptoCurrency/)** — Community sentiment signals  
-""")
+
+# --- Footer (compact version) ---
+st.markdown("---")
+st.markdown(
+    """
+    <div style="text-align:center; font-size:13px; color:gray;">
+        🧠 Built by <b>Sneha Banerjee</b> | 
+        <a href="https://www.linkedin.com/in/snehabanerjee27" target="_blank">LinkedIn</a> <br>
+        📊 Data Sources: 
+        <a href="https://www.coingecko.com/en/api" target="_blank">CoinGecko API</a> & 
+        <a href="https://www.reddit.com/r/CryptoCurrency/" target="_blank">Reddit (r/CryptoCurrency)</a>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 
