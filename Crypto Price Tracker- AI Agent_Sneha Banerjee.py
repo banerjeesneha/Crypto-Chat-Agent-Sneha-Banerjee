@@ -122,7 +122,7 @@ st.markdown(
     """
     <div style="text-align:center; font-size:13px; color:gray;">
         🧠 Built by <b>Sneha Banerjee</b> | 
-        <a href="https://www.linkedin.com/in/snehabanerjee27" target="_blank">LinkedIn</a> <br>
+        <a href="https://www.linkedin.com/in/sneha-banerjee/" target="_blank">LinkedIn</a> <br>
         📊 Data Sources: 
         <a href="https://www.coingecko.com/en/api" target="_blank">CoinGecko API</a> & 
         <a href="https://www.reddit.com/r/CryptoCurrency/" target="_blank">Reddit (r/CryptoCurrency)</a>
