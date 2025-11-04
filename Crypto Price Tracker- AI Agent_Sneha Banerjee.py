@@ -113,3 +113,19 @@ if st.button("Get Top Movers"):
     st.text_area("Top 5 Bearish Coins", value="\n".join(bearish_list), height=150)
 
 st.info("Click the buttons anytime — agent fetches fresh data automatically.")
+
+# --- Footer Section ---
+st.markdown("---")
+st.subheader("🧠 Built by")
+st.markdown("""
+👩‍💻 **Sneha Banerjee** — Data & Product Analytics professional exploring **AI Agents for real-world use cases**.  
+🔗 [Connect on LinkedIn](https://www.linkedin.com/in/snehabanerjee27)
+""")
+
+st.subheader("📊 Data Sources")
+st.markdown("""
+💠 **[CoinGecko API](https://www.coingecko.com/en/api)** — Real-time cryptocurrency market data  
+💠 **[Reddit API (r/CryptoCurrency)](https://www.reddit.com/r/CryptoCurrency/)** — Community sentiment signals  
+""")
+
+
