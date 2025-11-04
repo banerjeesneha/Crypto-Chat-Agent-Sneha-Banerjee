@@ -35,12 +35,21 @@ def get_crypto_data(ids="", per_page=50):
 
 def get_reddit_sentiment(coin):
     try:
-        posts = [p.title for p in reddit.subreddit("CryptoCurrency").search(coin, limit=10)]
+        # Fetch 50 posts for better representation
+        posts = [p.title for p in reddit.subreddit("CryptoCurrency").search(coin, limit=50)]
         if not posts:
             return "neutral"
-        joined = " ".join(posts)[:512]
-        label = sentiment(joined)[0]["label"]
-        return "bullish" if label == "POSITIVE" else "bearish"
+        joined = " ".join(posts)[:1024]
+        results = sentiment(joined)
+        # Majority vote
+        positive_count = sum(1 for r in results if r['label'] == 'POSITIVE')
+        negative_count = sum(1 for r in results if r['label'] == 'NEGATIVE')
+        if positive_count > negative_count:
+            return "bullish"
+        elif negative_count > positive_count:
+            return "bearish"
+        else:
+            return "neutral"
     except Exception:
         return "neutral"
 
@@ -60,33 +69,28 @@ def generate_summary():
         price_change = c.get("price_change_percentage_24h",0)
         trend = "↑" if price_change > 0 else "↓"
         sentiment_label = get_reddit_sentiment(name)
-        summary_lines.append(f"{name} {trend}{abs(price_change):.2f}% — community sentiment: {sentiment_label}")
+        # Separate metrics for clarity
+        summary_lines.append(
+            f"{name}: Market Trend {trend}{abs(price_change):.2f}% | Community Sentiment: {sentiment_label}"
+        )
     return summary_lines
 
-# ---------------------- Top Movers ----------------------
+# ---------------------- Top Movers (price-driven only) ----------------------
 def get_top_movers(per_page=250, top_n=5):
     coins = get_crypto_data(ids="", per_page=per_page)
     if not coins or not isinstance(coins, list):
         return [], "", []
 
-    # Filter out coins without 24h change
+    # Filter coins without 24h change
     coins = [c for c in coins if c.get("price_change_percentage_24h") is not None]
     if not coins:
         return [], "", []
 
-    # Top 5 bullish and bearish
     bullish = sorted(coins, key=lambda x: x["price_change_percentage_24h"], reverse=True)[:top_n]
     bearish = sorted(coins, key=lambda x: x["price_change_percentage_24h"])[:top_n]
 
-    # Sentiment only for top 5 coins
-    bullish_list = [
-        f"{c.get('name','Unknown')} ↑{c['price_change_percentage_24h']:.2f}% — sentiment: {get_reddit_sentiment(c.get('name',''))}"
-        for c in bullish
-    ]
-    bearish_list = [
-        f"{c.get('name','Unknown')} ↓{c['price_change_percentage_24h']:.2f}% — sentiment: {get_reddit_sentiment(c.get('name',''))}"
-        for c in bearish
-    ]
+    bullish_list = [f"{c.get('name','Unknown')} ↑{c['price_change_percentage_24h']:.2f}%" for c in bullish]
+    bearish_list = [f"{c.get('name','Unknown')} ↓{c['price_change_percentage_24h']:.2f}%" for c in bearish]
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     return bullish_list, timestamp, bearish_list
@@ -112,4 +116,4 @@ if st.button("Get Top Movers"):
     st.subheader("Top 5 Bearish Coins")
     st.text_area("", value="\n".join(bearish_list), height=150)
 
-st.info("Click the buttons anytime — agent fetches fresh data automatically.")
+st.info("Cl
