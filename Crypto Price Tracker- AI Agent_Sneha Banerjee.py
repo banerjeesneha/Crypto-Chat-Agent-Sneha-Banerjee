@@ -3,6 +3,7 @@ import requests
 import praw
 from transformers import pipeline
 from datetime import datetime
+import time
 
 # ---------------------- Reddit Setup ----------------------
 reddit = praw.Reddit(
@@ -15,7 +16,7 @@ reddit = praw.Reddit(
 sentiment = pipeline("sentiment-analysis")
 
 # ---------------------- Functions ----------------------
-def get_crypto_data(ids="", per_page=50):
+def get_crypto_data(ids="", per_page=50, retries=3):
     url = "https://api.coingecko.com/api/v3/coins/markets"
     params = {
         "vs_currency": "usd",
@@ -24,14 +25,15 @@ def get_crypto_data(ids="", per_page=50):
         "per_page": per_page,
         "page": 1
     }
-    try:
-        response = requests.get(url, params=params, timeout=10)
-        data = response.json()
-        if not isinstance(data, list):
-            return []
-        return data
-    except Exception:
-        return []
+    for _ in range(retries):
+        try:
+            response = requests.get(url, params=params, timeout=10)
+            data = response.json()
+            if isinstance(data, list) and len(data) > 0:
+                return data
+        except Exception:
+            time.sleep(1)  # small delay before retry
+    return []
 
 def get_reddit_sentiment(coin):
     try:
@@ -40,6 +42,7 @@ def get_reddit_sentiment(coin):
             return "neutral"
         joined = " ".join(posts)[:1024]
         results = sentiment(joined)
+        # majority vote
         positive_count = sum(1 for r in results if r['label'] == 'POSITIVE')
         negative_count = sum(1 for r in results if r['label'] == 'NEGATIVE')
         if positive_count > negative_count:
@@ -53,18 +56,12 @@ def get_reddit_sentiment(coin):
 
 # ---------------------- Summary for 4 coins ----------------------
 def get_summary_coins():
-    ids = "bitcoin,ethereum,solana,zcash"
-    return get_crypto_data(ids=ids, per_page=4)
+    return get_crypto_data(ids="bitcoin,ethereum,solana,zcash", per_page=4)
 
-def get_summary_coins(retries=3):
-    ids = "bitcoin,ethereum,solana,zcash"
-    for _ in range(retries):
-        coins = get_crypto_data(ids=ids, per_page=4)
-        if coins:
-            return coins
-    st.error("Unable to fetch data from Coingecko after multiple attempts. Please check your network or try again later.")
-    return []
-    
+def generate_summary():
+    coins = get_summary_coins()
+    if not coins:
+        return ["Error fetching crypto data. Please try again later."]
     summary_lines = []
     for c in coins:
         name = c.get("name","Unknown")
@@ -78,10 +75,9 @@ def get_summary_coins(retries=3):
 
 # ---------------------- Top Movers (price-driven only) ----------------------
 def get_top_movers(per_page=250, top_n=5):
-    coins = get_crypto_data(ids="", per_page=per_page)
-    if not coins or not isinstance(coins, list):
+    coins = get_crypto_data(per_page=per_page)
+    if not coins:
         return [], "", []
-
     coins = [c for c in coins if c.get("price_change_percentage_24h") is not None]
     if not coins:
         return [], "", []
@@ -91,21 +87,20 @@ def get_top_movers(per_page=250, top_n=5):
 
     bullish_list = [f"{c.get('name','Unknown')} ↑{c['price_change_percentage_24h']:.2f}%" for c in bullish]
     bearish_list = [f"{c.get('name','Unknown')} ↓{c['price_change_percentage_24h']:.2f}%" for c in bearish]
-
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     return bullish_list, timestamp, bearish_list
 
 # ---------------------- Streamlit UI ----------------------
 st.title("💬 Crypto Chat Agent")
 
-# Daily summary (4 coins)
+# Summary Section
 st.subheader("📊 Daily Coin Summary (Bitcoin, Ethereum, Solana, Zcash)")
 if st.button("Get Summary"):
     with st.spinner("Fetching 4 coin summary..."):
         summary_lines = generate_summary()
     st.text_area("Daily Summary", value="\n".join(summary_lines), height=200)
 
-# Top 5 movers (all coins)
+# Top Movers Section
 st.subheader("📈 Top 5 Bullish & Bearish Coins (All Coins)")
 if st.button("Get Top Movers"):
     with st.spinner("Fetching top movers..."):
