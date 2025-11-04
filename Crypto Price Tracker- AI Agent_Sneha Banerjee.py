@@ -65,13 +65,11 @@ def get_top_coins():
     if not coins:
         return [], "", []
 
-    # Sort coins by 24h price change
-    sorted_coins = sorted(coins, key=lambda x: x.get("price_change_percentage_24h", 0), reverse=True)
-    bullish = sorted_coins[:5]
+    # Top 5 bullish coins (highest 24h % change)
+    bullish = sorted(coins, key=lambda x: x.get("price_change_percentage_24h", 0), reverse=True)[:5]
 
-    # Exclude bullish coins from bearish selection
-    remaining = [c for c in sorted_coins if c not in bullish]
-    bearish = sorted(remaining, key=lambda x: x.get("price_change_percentage_24h", 0))[:5]
+    # Top 5 bearish coins (lowest 24h % change)
+    bearish = sorted(coins, key=lambda x: x.get("price_change_percentage_24h", 0))[:5]
 
     bullish_list = [
         f"{c.get('name','Unknown')} ↑{c.get('price_change_percentage_24h',0):.2f}% — sentiment: {get_reddit_sentiment(c.get('name',''))}" 
@@ -82,9 +80,7 @@ def get_top_coins():
         for c in bearish
     ]
 
-    # Timestamp
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
     return bullish_list, timestamp, bearish_list
 
 # ---------------------- Streamlit UI ----------------------
